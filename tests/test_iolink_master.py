@@ -46,33 +46,33 @@ class TestIOLinkMaster:
 
     def test_make_request_json_response(self):
         """Test make_request with JSON response"""
-        with patch("requests.get") as mock_get:
+        with patch("requests.get") as mock_get, patch("requests.post") as mock_post:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
             master = IOLinkMaster("192.168.1.101")
 
-            # Mock API request
+            # Mock API request (now uses POST)
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {"data": {"value": "4"}}
-            mock_get.return_value = mock_response
+            mock_response.json.return_value = {"code": 200, "data": {"value": "4"}}
+            mock_post.return_value = mock_response
 
             result = master.make_request("/test/endpoint")
             assert result == "4"
 
     def test_make_request_text_response(self):
         """Test make_request with plain text response"""
-        with patch("requests.get") as mock_get:
+        with patch("requests.get") as mock_get, patch("requests.post") as mock_post:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
             master = IOLinkMaster("192.168.1.101")
 
-            # Mock API request
+            # Mock API request (now uses POST)
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.side_effect = ValueError  # Not valid JSON
-            mock_response.text = "plain_text_response"
-            mock_get.return_value = mock_response
+            mock_response.text.strip.return_value = "plain_text_response"
+            mock_post.return_value = mock_response
 
             result = master.make_request("/test/endpoint")
             assert result == "plain_text_response"
@@ -114,7 +114,8 @@ class TestIOLinkMaster:
             # Mock invalid port count request
             with patch.object(master, "make_request", return_value="invalid"):
                 result = master.get_port_count()
-                assert result == 0
+                # Should return 4 (AL1350 fallback) instead of 0
+                assert result == 4
 
     def test_get_device_status(self):
         """Test get_device_status method"""
@@ -141,16 +142,16 @@ class TestIOLinkMaster:
                 assert result == "TV7105"
 
     def test_get_temperature_celsius_valid(self):
-        """Test temperature conversion with valid data"""
+        """Test temperature conversion with valid data using TV7105 official formula: MeasurementValue * 0.1"""
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
             master = IOLinkMaster("192.168.1.101")
 
-            # Mock temperature data (0x0157 = 343 decimal = 34.3°C)
+            # Mock temperature data (0x0157 = 343 decimal = 343*0.1 = 34.3°C)
             with patch.object(master, "get_device_data", return_value="0x0157"):
                 result = master.get_temperature_celsius(1)
-                assert result == 34.3
+                assert round(result, 1) == 34.3
 
     def test_get_temperature_celsius_invalid(self):
         """Test temperature conversion with invalid data"""
@@ -169,10 +170,10 @@ class TestUtilityFunctions:
     """Test cases for utility functions"""
 
     def test_hex_to_temperature_valid(self):
-        """Test hex_to_temperature with valid input"""
-        assert hex_to_temperature("0x0157") == 34.3
-        assert hex_to_temperature("0x00FF") == 25.5
-        assert hex_to_temperature("0x0000") == 0.0
+        """Test hex_to_temperature with valid input using TV7105 official formula: MeasurementValue * 0.1"""
+        assert round(hex_to_temperature("0x0157"), 1) == 34.3  # 343 * 0.1
+        assert round(hex_to_temperature("0x00FF"), 1) == 25.5  # 255 * 0.1
+        assert round(hex_to_temperature("0x0000"), 1) == 0.0  # 0 * 0.1
 
     def test_hex_to_temperature_invalid(self):
         """Test hex_to_temperature with invalid input"""

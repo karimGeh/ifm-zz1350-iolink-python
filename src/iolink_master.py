@@ -83,19 +83,39 @@ class IOLinkMaster:
             "cid": cid if cid is not None else self.cid,
             "adr": endpoint,
         }
+
         try:
-            response = requests.post(self.base_url, json=payload, timeout=self.timeout)
+            response = requests.post(
+                self.base_url,
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=self.timeout,
+            )
+
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    if "data" in data and "value" in data["data"]:
-                        return data["data"]["value"]
-                    return str(data)
-                except (json.JSONDecodeError, ValueError):
+
+                    # Check for successful response
+                    if data.get("code") == 200 and "data" in data:
+                        if "value" in data["data"]:
+                            return str(data["data"]["value"])
+                        else:
+                            return str(data["data"])
+                    elif data.get("code") == 404:
+                        print(f"❌ API Error 404: Endpoint not found - {endpoint}")
+                        return None
+                    else:
+                        print(f"❌ API Error {data.get('code')}: {data}")
+                        return None
+
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"❌ JSON decode error: {e}")
                     return response.text.strip()
             else:
-                print(f"❌ Request failed: {response.status_code}")
+                print(f"❌ HTTP Request failed: {response.status_code}")
                 return None
+
         except requests.RequestException as e:
             print(f"❌ Request error: {e}")
             raise
@@ -104,17 +124,24 @@ class IOLinkMaster:
         """
         Get the number of available ports on the IO-Link Master
 
+        Note: Based on AL1350 specifications, this device has 4 ports.
+        The API endpoint for port count may not be available on all firmware versions.
+
         Returns:
-            int: Number of ports available
+            int: Number of ports available (4 for AL1350)
         """
         try:
             result = self.make_request(
                 "/iolinkmaster/port/numberofports/getdata", cid=cid
             )
-            print(result)
-            return int(result) if result else 0
+            if result:
+                return int(result)
+            else:
+                # Fallback: AL1350 is a 4-port device
+                return 4
         except (ValueError, TypeError):
-            return 0
+            # Fallback: AL1350 is a 4-port device
+            return 4
 
     def get_device_status(self, port: int, cid: Optional[int] = None) -> str:
         """
@@ -174,6 +201,10 @@ class IOLinkMaster:
         Convert raw temperature sensor data to Celsius
 
         This method specifically handles TV7105 temperature sensor data conversion.
+        According to the official TV7105 documentation:
+        - Temperature is transmitted as 16-bit integer in BigEndian format
+        - Formula: Value in [°C] = MeasurementValue * 0.1
+        - Range: -53.7°C to 157.5°C
 
         Args:
             port (int): Port number (1-based)
@@ -183,12 +214,33 @@ class IOLinkMaster:
         """
         try:
             raw_data = self.get_device_data(port, cid=cid)
-            if raw_data and raw_data.startswith("0x"):
-                # Convert hex to integer
-                hex_value = int(raw_data, 16)
-                # TV7105 specific conversion: temperature = hex_value / 10
-                temperature = hex_value / 10.0
-                return temperature
+
+            if raw_data and len(raw_data) >= 4:
+                # Handle different hex formats
+                if raw_data.startswith("0x"):
+                    hex_str = raw_data[2:]
+                else:
+                    hex_str = raw_data
+
+                # For TV7105, temperature is in the first 16 bits (4 hex digits) of the 32-bit process data
+                if len(hex_str) >= 4:
+                    temp_hex = hex_str[:4]  # First 16 bits (4 hex digits)
+                    hex_value = int(temp_hex, 16)
+
+                    # TV7105 official formula: Value in [°C] = MeasurementValue * 0.1
+                    temperature = hex_value * 0.1
+
+                    # Sanity check: TV7105 range is -53.7°C to 157.5°C
+                    if -53.7 <= temperature <= 157.5:
+                        return temperature
+                    else:
+                        print(
+                            f"⚠️ Temperature {temperature:.1f}°C out of TV7105 range (-53.7°C to 157.5°C)"
+                        )
+                        return None
+
+                return None
+
         except (ValueError, TypeError) as e:
             print(f"❌ Temperature conversion error: {e}")
         return None
@@ -285,11 +337,14 @@ def hex_to_temperature(hex_value: str) -> Optional[float]:
 
     Returns:
         float: Temperature in Celsius, None if conversion fails
+
+    Formula: Value in [°C] = MeasurementValue * 0.1 (TV7105 official specification)
     """
     try:
         if hex_value and hex_value.startswith("0x"):
             decimal_value = int(hex_value, 16)
-            return decimal_value / 10.0
+            # TV7105 official formula: Value in [°C] = MeasurementValue * 0.1
+            return decimal_value * 0.1
     except (ValueError, TypeError, AttributeError):
         pass
     return None
