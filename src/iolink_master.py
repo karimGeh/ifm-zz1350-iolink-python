@@ -4,9 +4,9 @@ ifm ZZ1350 IO-Link Master Python Library
 This module provides a Python interface for communicating with the ifm AL1350 IO-Link Master
 using its REST API. It supports device discovery, sensor data reading, and real-time monitoring.
 
-Author: Your Name
+Author: Karim Saadeldin
 License: MIT
-Repository: https://github.com/yourusername/ifm-zz1350-iolink-python
+Repository: https://github.com/karimGeh/ifm-zz1350-iolink-python
 """
 
 import requests
@@ -29,13 +29,14 @@ class IOLinkMaster:
         timeout (int): Request timeout in seconds
     """
 
-    def __init__(self, device_ip: str = "169.254.178.135", timeout: int = 5):
+    def __init__(self, device_ip: str = "169.254.178.135", timeout: int = 5, cid: int = 1):
         """
         Initialize connection to IO-Link Master
 
         Args:
             device_ip (str): IP address of the IO-Link Master device
             timeout (int): Request timeout in seconds
+            cid (int): Command ID for API requests
 
         Raises:
             ConnectionError: If unable to connect to the device
@@ -43,23 +44,29 @@ class IOLinkMaster:
         self.device_ip = device_ip
         self.base_url = f"http://{device_ip}"
         self.timeout = timeout
+        self.cid = cid
 
         print(f"🔗 Connecting to IO-Link Master at {device_ip}")
 
         # Test connection
         try:
             response = requests.get(self.base_url, timeout=self.timeout)
-            print("✅ Connection established")
+            if response.status_code == 200:
+                print("✅ Connection established")
+            else:
+                print(f"❌ Connection failed: Status {response.status_code}")
+                raise ConnectionError(f"Unable to connect to IO-Link Master at {device_ip}")
         except requests.RequestException as e:
             print(f"❌ Connection failed: {e}")
             raise ConnectionError(f"Unable to connect to IO-Link Master at {device_ip}")
 
-    def make_request(self, endpoint: str) -> Optional[str]:
+    def make_request(self, endpoint: str, cid: Optional[int] = None) -> Optional[str]:
         """
-        Make a GET request to the IO-Link Master API
+        Make a POST request to the IO-Link Master API
 
         Args:
-            endpoint (str): API endpoint path
+            endpoint (str): API endpoint path (adr)
+            cid (int, optional): Command ID for API requests
 
         Returns:
             str: Response data if successful, None if failed
@@ -67,30 +74,33 @@ class IOLinkMaster:
         Raises:
             requests.RequestException: If request fails
         """
-        url = f"{self.base_url}{endpoint}"
-
+        payload = {
+            "code": "request",
+            "cid": cid if cid is not None else self.cid,
+            "adr": endpoint
+        }
         try:
-            response = requests.get(url, timeout=self.timeout)
-
+            response = requests.post(
+                self.base_url,
+                json=payload,
+                timeout=self.timeout
+            )
             if response.status_code == 200:
                 try:
-                    # Try to parse as JSON first
                     data = response.json()
-                    if "data" in data:
+                    if "data" in data and "value" in data["data"]:
                         return data["data"]["value"]
                     return str(data)
                 except (json.JSONDecodeError, ValueError):
-                    # Return raw text if not JSON
                     return response.text.strip()
             else:
                 print(f"❌ Request failed: {response.status_code}")
                 return None
-
         except requests.RequestException as e:
             print(f"❌ Request error: {e}")
             raise
 
-    def get_port_count(self) -> int:
+    def get_port_count(self, cid: Optional[int] = None) -> int:
         """
         Get the number of available ports on the IO-Link Master
 
@@ -98,12 +108,13 @@ class IOLinkMaster:
             int: Number of ports available
         """
         try:
-            result = self.make_request("/iolinkmaster/port/numberofports/getdata")
+            result = self.make_request("/iolinkmaster/port/numberofports/getdata", cid=cid)
+            print(result)
             return int(result) if result else 0
         except (ValueError, TypeError):
             return 0
 
-    def get_device_status(self, port: int) -> str:
+    def get_device_status(self, port: int, cid: Optional[int] = None) -> str:
         """
         Get the connection status of a device on a specific port
 
@@ -114,11 +125,11 @@ class IOLinkMaster:
             str: Device status ('2' = connected, '1' = disconnected, etc.)
         """
         return (
-            self.make_request(f"/iolinkmaster/port[{port}]/iolinkdevice/status/getdata")
+            self.make_request(f"/iolinkmaster/port[{port}]/iolinkdevice/status/getdata", cid=cid)
             or "0"
         )
 
-    def get_device_name(self, port: int) -> str:
+    def get_device_name(self, port: int, cid: Optional[int] = None) -> str:
         """
         Get the product name of a device connected to a specific port
 
@@ -130,12 +141,12 @@ class IOLinkMaster:
         """
         return (
             self.make_request(
-                f"/iolinkmaster/port[{port}]/iolinkdevice/productname/getdata"
+                f"/iolinkmaster/port[{port}]/iolinkdevice/productname/getdata", cid=cid
             )
             or "Unknown"
         )
 
-    def get_device_data(self, port: int) -> str:
+    def get_device_data(self, port: int, cid: Optional[int] = None) -> str:
         """
         Get raw process data from a device on a specific port
 
@@ -146,11 +157,11 @@ class IOLinkMaster:
             str: Raw device data (hexadecimal format)
         """
         return (
-            self.make_request(f"/iolinkmaster/port[{port}]/iolinkdevice/pdin/getdata")
+            self.make_request(f"/iolinkmaster/port[{port}]/iolinkdevice/pdin/getdata", cid=cid)
             or "0x0000"
         )
 
-    def get_temperature_celsius(self, port: int) -> Optional[float]:
+    def get_temperature_celsius(self, port: int, cid: Optional[int] = None) -> Optional[float]:
         """
         Convert raw temperature sensor data to Celsius
 
@@ -163,7 +174,7 @@ class IOLinkMaster:
             float: Temperature in Celsius, None if conversion fails
         """
         try:
-            raw_data = self.get_device_data(port)
+            raw_data = self.get_device_data(port, cid=cid)
             if raw_data and raw_data.startswith("0x"):
                 # Convert hex to integer
                 hex_value = int(raw_data, 16)
@@ -174,14 +185,14 @@ class IOLinkMaster:
             print(f"❌ Temperature conversion error: {e}")
         return None
 
-    def scan_all_ports(self) -> Dict[int, Dict[str, Any]]:
+    def scan_all_ports(self, cid: Optional[int] = None) -> Dict[int, Dict[str, Any]]:
         """
         Scan all ports and return information about connected devices
 
         Returns:
             dict: Dictionary with port numbers as keys and device info as values
         """
-        port_count = self.get_port_count()
+        port_count = self.get_port_count(cid=cid)
         results = {}
 
         print(f"📊 Scanning {port_count} ports...")
@@ -189,16 +200,16 @@ class IOLinkMaster:
         for port in range(1, port_count + 1):
             print(f"\n🔍 Scanning Port {port}...")
 
-            status = self.get_device_status(port)
+            status = self.get_device_status(port, cid=cid)
 
             port_info = {"port": port, "status": status, "connected": status == "2"}
 
             if status == "2":  # Device connected
                 port_info.update(
                     {
-                        "device_name": self.get_device_name(port),
-                        "raw_data": self.get_device_data(port),
-                        "temperature_c": self.get_temperature_celsius(port),
+                        "device_name": self.get_device_name(port, cid=cid),
+                        "raw_data": self.get_device_data(port, cid=cid),
+                        "temperature_c": self.get_temperature_celsius(port, cid=cid),
                     }
                 )
                 print(f"✅ Device: {port_info['device_name']}")
@@ -213,7 +224,7 @@ class IOLinkMaster:
         return results
 
     def monitor_temperature(
-        self, port: int, interval: int = 5, duration: Optional[int] = None
+        self, port: int, interval: int = 5, duration: Optional[int] = None, cid: Optional[int] = None
     ):
         """
         Monitor temperature from a sensor in real-time
@@ -222,6 +233,7 @@ class IOLinkMaster:
             port (int): Port number to monitor
             interval (int): Seconds between readings
             duration (int): Total monitoring duration in seconds (None for infinite)
+            cid (int, optional): Command ID for API requests
         """
         print(f"🌡️ Starting temperature monitoring on Port {port}")
         print(f"📊 Reading interval: {interval} seconds")
@@ -238,7 +250,7 @@ class IOLinkMaster:
                     print(f"\n⏰ Monitoring completed ({duration} seconds)")
                     break
 
-                temperature = self.get_temperature_celsius(port)
+                temperature = self.get_temperature_celsius(port, cid=cid)
                 timestamp = time.strftime("%H:%M:%S")
 
                 if temperature is not None:
@@ -275,7 +287,7 @@ if __name__ == "__main__":
     # Example usage
     try:
         # Initialize connection
-        master = IOLinkMaster("169.254.178.135")
+        master = IOLinkMaster("192.168.1.101")
 
         # Scan all ports
         devices = master.scan_all_ports()

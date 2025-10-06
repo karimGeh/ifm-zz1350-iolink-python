@@ -10,7 +10,7 @@ This repository accompanies the comprehensive LinkedIn tutorial that guides you 
 - Building Python applications for industrial sensor monitoring
 - Real-world industrial IoT implementation
 
-**📚 Read the full article**: [ifm ZZ1350 IO-Link Master Kit: Getting Started with Industrial IoT](YOUR_LINKEDIN_ARTICLE_URL)
+**📚 Read the full article**: [ifm ZZ1350 IO-Link Master Kit: Getting Started with Industrial IoT](https://www.linkedin.com/pulse/ifm-zz1350-io-link-master-kit-getting-started-iot-karim-saadeldin-6jrfe/)
 
 ## 🎯 What This Repository Contains
 
@@ -45,7 +45,7 @@ This repository accompanies the comprehensive LinkedIn tutorial that guides you 
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourusername/ifm-zz1350-iolink-python.git
+   git clone https://github.com/karimGeh/ifm-zz1350-iolink-python.git
    cd ifm-zz1350-iolink-python
    ```
 
@@ -218,7 +218,7 @@ For detailed API documentation, see [`docs/API.md`](docs/API.md).
 **No devices found on ports**:
 - Check sensor connections and power
 - Verify sensors are IO-Link compatible
-- Check device status via web interface: `http://YOUR_DEVICE_IP`
+- Check device status via web interface: `http://169.254.178.135` (or your device's IP)
 
 **Import errors**:
 - Ensure you're running scripts from the repository root
@@ -228,7 +228,7 @@ For detailed API documentation, see [`docs/API.md`](docs/API.md).
 
 1. **Check the LinkedIn article** for setup and configuration details
 2. **Run the network discovery script** to verify device connectivity
-3. **Check device web interface** at `http://YOUR_DEVICE_IP`
+3. **Check device web interface** at `http://169.254.178.135` (or your device's IP)
 4. **Run unit tests** to verify library functionality
 
 ## 🤝 Contributing
@@ -259,6 +259,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
+- **Email**: [karim2jihad@gmail.com](mailto:karim2jihad@gmail.com) - Questions about the code or article
 - **LinkedIn**: Connect with me for questions about the article
 - **GitHub Issues**: Report bugs or request features
 - **ifm Support**: For hardware-specific questions, contact ifm electronic
@@ -270,4 +271,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **🔗 Related Resources**:
 - [ifm electronic IO-Link Academy](https://www.ifm.com/academy)
 - [IO-Link Official Specification](https://io-link.com/)
-- [Original LinkedIn Article](YOUR_LINKEDIN_ARTICLE_URL)
+- [Original LinkedIn Article](https://www.linkedin.com/pulse/ifm-zz1350-io-link-master-kit-getting-started-iot-karim-saadeldin-6jrfe/)

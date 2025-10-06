@@ -15,12 +15,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="ifm-zz1350-iolink-python",
     version="1.0.0",
-    author="Your Name",
-    author_email="your.email@example.com",
+    author="Karim Saadeldin",
+    author_email="karim2jihad@gmail.com",
     description="Python library for ifm AL1350 IO-Link Master communication",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/ifm-zz1350-iolink-python",
+    url="https://github.com/karimGeh/ifm-zz1350-iolink-python",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     classifiers=[
@@ -58,9 +58,9 @@ setup(
     },
     keywords="iolink, ifm, industrial, iot, automation, sensors, temperature",
     project_urls={
-        "Bug Reports": "https://github.com/yourusername/ifm-zz1350-iolink-python/issues",
-        "Source": "https://github.com/yourusername/ifm-zz1350-iolink-python",
-        "Documentation": "https://github.com/yourusername/ifm-zz1350-iolink-python/blob/main/docs/API.md",
-        "Article": "YOUR_LINKEDIN_ARTICLE_URL",
+        "Bug Reports": "https://github.com/karimGeh/ifm-zz1350-iolink-python/issues",
+        "Source": "https://github.com/karimGeh/ifm-zz1350-iolink-python",
+        "Documentation": "https://github.com/karimGeh/ifm-zz1350-iolink-python/blob/main/docs/API.md",
+        "Article": "https://www.linkedin.com/pulse/ifm-zz1350-io-link-master-kit-getting-started-iot-karim-saadeldin-6jrfe/",
     },
 )

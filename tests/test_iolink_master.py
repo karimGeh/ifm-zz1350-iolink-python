@@ -33,23 +33,23 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             mock_get.return_value.status_code = 200
 
-            master = IOLinkMaster("192.168.1.100")
-            assert master.device_ip == "192.168.1.100"
-            assert master.base_url == "http://192.168.1.100"
+            master = IOLinkMaster("192.168.1.101")
+            assert master.device_ip == "192.168.1.101"
+            assert master.base_url == "http://192.168.1.101"
             assert master.timeout == 5
 
     def test_init_connection_failure(self):
         """Test initialization with connection failure"""
         with patch("requests.get", side_effect=requests.ConnectionError):
             with pytest.raises(ConnectionError):
-                IOLinkMaster("192.168.1.100")
+                IOLinkMaster("192.168.1.101")
 
     def test_make_request_json_response(self):
         """Test make_request with JSON response"""
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock API request
             mock_response = MagicMock()
@@ -65,7 +65,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock API request
             mock_response = MagicMock()
@@ -82,7 +82,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock API request failure
             mock_response = MagicMock()
@@ -97,7 +97,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock port count request
             with patch.object(master, "make_request", return_value="4"):
@@ -109,7 +109,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock invalid port count request
             with patch.object(master, "make_request", return_value="invalid"):
@@ -121,7 +121,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock device status request
             with patch.object(master, "make_request", return_value="2"):
@@ -133,7 +133,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock device name request
             with patch.object(master, "make_request", return_value="TV7105"):
@@ -145,7 +145,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock temperature data (0x0157 = 343 decimal = 34.3°C)
             with patch.object(master, "get_device_data", return_value="0x0157"):
@@ -157,7 +157,7 @@ class TestIOLinkMaster:
         with patch("requests.get") as mock_get:
             # Mock successful connection in __init__
             mock_get.return_value.status_code = 200
-            master = IOLinkMaster("192.168.1.100")
+            master = IOLinkMaster("192.168.1.101")
 
             # Mock invalid temperature data
             with patch.object(master, "get_device_data", return_value="invalid"):
